@@ -1,13 +1,10 @@
-/*
+/**
  * angucomplete-extra
  * Autocomplete directive for AngularJS
  * This is a fork of Daryl Rowland's angucomplete with some extra features.
  * By Hidenari Nozaki
- *
- * Copyright (c) 2014 Hidenari Nozaki and contributors
- * Licensed under the MIT license
+ * This is a fork of the fork for 22seven. It contains a small hack to support typing in search values and not having to select a suggestion
  */
-
 'use strict';
 
 angular.module('angucomplete-alt', [] ).directive('angucompleteAlt', ['$parse', '$http', '$sce', '$timeout', function ($parse, $http, $sce, $timeout) {
@@ -23,6 +20,7 @@ angular.module('angucomplete-alt', [] ).directive('angucompleteAlt', ['$parse', 
     restrict: 'EA',
     scope: {
       selectedObject: '=',
+      typedTerm: '=',
       localData: '=',
       remoteUrlRequestFormatter: '=',
       id: '@',
@@ -39,13 +37,9 @@ angular.module('angucomplete-alt', [] ).directive('angucompleteAlt', ['$parse', 
       matchClass: '@',
       clearSelected: '@'
     },
-    template: '<div class="angucomplete-holder"><input id="{{id}}_value" ng-model="searchStr" type="text" placeholder="{{placeholder}}" class="{{inputClass}}" ng-focus="resetHideResults()" ng-blur="hideResults()"/><div id="{{id}}_dropdown" class="angucomplete-dropdown" ng-if="showDropdown"><div class="angucomplete-searching" ng-show="searching">Searching...</div><div class="angucomplete-searching" ng-show="!searching && (!results || results.length == 0)">No results found</div><div class="angucomplete-row" ng-repeat="result in results" ng-click="selectResult(result)" ng-mouseover="hoverRow()" ng-class="{\'angucomplete-selected-row\': $index == currentIndex}"><div ng-if="imageField" class="angucomplete-image-holder"><img ng-if="result.image && result.image != \'\'" ng-src="{{result.image}}" class="angucomplete-image"/><div ng-if="!result.image && result.image != \'\'" class="angucomplete-image-default"></div></div><div class="angucomplete-title" ng-if="matchClass" ng-bind-html="result.title"></div><div class="angucomplete-title" ng-if="!matchClass">{{ result.title }}</div><div ng-if="result.description && result.description != \'\'" class="angucomplete-description">{{result.description}}</div></div></div></div>',
+    template: '<div class="angucomplete-holder"><input id="{{id}}_value" ng-model="searchStr" ng-blur="onBlur($event)" type="text" placeholder="{{placeholder}}" class="{{inputClass}}"/><div id="{{id}}_dropdown" class="angucomplete-dropdown" ng-if="showDropdown"><div class="angucomplete-searching" ng-show="searching">Searching...</div><div class="angucomplete-searching" ng-show="!searching && (!results || results.length == 0)">No results found</div><div class="angucomplete-row" ng-repeat="result in results" ng-click="selectResult(result)" ng-mouseover="hoverRow()" ng-class="{\'angucomplete-selected-row\': $index == currentIndex}"><div ng-if="imageField" class="angucomplete-image-holder"><img ng-if="result.image && result.image != \'\'" ng-src="{{result.image}}" class="angucomplete-image"/><div ng-if="!result.image && result.image != \'\'" class="angucomplete-image-default"></div></div><div class="angucomplete-title" ng-if="matchClass" ng-bind-html="result.title"></div><div class="angucomplete-title" ng-if="!matchClass">{{ result.title }}</div><div ng-if="result.description && result.description != \'\'" class="angucomplete-description">{{result.description}}</div></div></div></div>',
     link: function(scope, elem, attrs) {
-      var inputField,
-          minlength = MIN_LENGTH,
-          searchTimer = null,
-          lastSearchTerm = null,
-          hideTimer;
+      var inputField, minlength = MIN_LENGTH, searchTimer = null, lastSearchTerm = null;
 
       scope.currentIndex = null;
       scope.searching = false;
@@ -80,16 +74,9 @@ angular.module('angucomplete-alt', [] ).directive('angucompleteAlt', ['$parse', 
         scope.clearSelected = false;
       }
 
-      scope.hideResults = function() {
-        hideTimer = $timeout(function() {
-          scope.showDropdown = false;
-        }, scope.pause);
-      };
-
-      scope.resetHideResults = function() {
-        if (hideTimer) {
-          $timeout.cancel(hideTimer);
-        }
+      scope.onBlur = function($event){
+        scope.typedTerm = $event.target.value;
+        $timeout(function(){ scope.showDropdown = false; }, 200)
       };
 
       scope.processResults = function(responseData, str) {
@@ -227,7 +214,7 @@ angular.module('angucomplete-alt', [] ).directive('angucompleteAlt', ['$parse', 
         if (scope.matchClass) {
           result.title = result.title.toString().replace(/(<([^>]+)>)/ig, '');
         }
-        
+
         if (scope.clearSelected) {
           scope.searchStr = null;
         }
