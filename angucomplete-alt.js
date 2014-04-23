@@ -35,9 +35,11 @@ angular.module('angucomplete-alt', [] ).directive('angucompleteAlt', ['$parse', 
       searchFields: '@',
       minlength: '@',
       matchClass: '@',
-      clearSelected: '@'
+      clearSelected: '@',
+      customOnBlur: '&customOnBlur',
+      customOnFocus: '&customOnFocus'
     },
-    template: '<div class="angucomplete-holder"><input id="{{id}}_value" ng-model="searchStr" ng-blur="onBlur($event)" type="text" placeholder="{{placeholder}}" class="{{inputClass}}"/><div id="{{id}}_dropdown" class="angucomplete-dropdown" ng-if="showDropdown"><div class="angucomplete-searching" ng-show="searching">Searching...</div><div class="angucomplete-searching" ng-show="!searching && (!results || results.length == 0)">No results found</div><div class="angucomplete-row" ng-repeat="result in results" ng-click="selectResult(result)" ng-mouseover="hoverRow()" ng-class="{\'angucomplete-selected-row\': $index == currentIndex}"><div ng-if="imageField" class="angucomplete-image-holder"><img ng-if="result.image && result.image != \'\'" ng-src="{{result.image}}" class="angucomplete-image"/><div ng-if="!result.image && result.image != \'\'" class="angucomplete-image-default"></div></div><div class="angucomplete-title" ng-if="matchClass" ng-bind-html="result.title"></div><div class="angucomplete-title" ng-if="!matchClass">{{ result.title }}</div><div ng-if="result.description && result.description != \'\'" class="angucomplete-description">{{result.description}}</div></div></div></div>',
+    template: '<div class="angucomplete-holder"><input id="{{id}}_value" ng-model="searchStr" ng-blur="onBlur($event)" ng-focus="onFocus($event)" type="text" placeholder="{{placeholder}}" class="{{inputClass}}"/><div id="{{id}}_dropdown" class="angucomplete-dropdown" ng-if="showDropdown"><div class="angucomplete-searching" ng-show="searching">Searching...</div><div class="angucomplete-searching" ng-show="!searching && (!results || results.length == 0)">No results found</div><div class="angucomplete-row" ng-repeat="result in results" ng-click="selectResult(result)" ng-mouseover="hoverRow()" ng-class="{\'angucomplete-selected-row\': $index == currentIndex}"><div ng-if="imageField" class="angucomplete-image-holder"><img ng-if="result.image && result.image != \'\'" ng-src="{{result.image}}" class="angucomplete-image"/><div ng-if="!result.image && result.image != \'\'" class="angucomplete-image-default"></div></div><div class="angucomplete-title" ng-if="matchClass" ng-bind-html="result.title"></div><div class="angucomplete-title" ng-if="!matchClass">{{ result.title }}</div><div ng-if="result.description && result.description != \'\'" class="angucomplete-description">{{result.description}}</div></div></div></div>',
     link: function(scope, elem, attrs) {
       var inputField, minlength = MIN_LENGTH, searchTimer = null, lastSearchTerm = null;
 
@@ -75,9 +77,18 @@ angular.module('angucomplete-alt', [] ).directive('angucompleteAlt', ['$parse', 
       }
 
       scope.onBlur = function($event){
+        if(scope.customOnBlur){
+          scope.customOnBlur($event);
+        }
         scope.typedTerm = $event.target.value;
         $timeout(function(){ scope.showDropdown = false; }, 200)
       };
+
+      scope.onFocus = function ($event) {
+        if(scope.customOnFocus) {
+          scope.customOnFocus($event);
+        }
+      }
 
       scope.processResults = function(responseData, str) {
         var titleFields, titleCode, i, t, description, image, text, re, strPart;
@@ -269,4 +280,3 @@ angular.module('angucomplete-alt', [] ).directive('angucompleteAlt', ['$parse', 
     }
   };
 }]);
-
